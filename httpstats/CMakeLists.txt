@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.8)
+project(libhttpstats)
+include_directories(${CMAKE_SOURCE_DIR}/include/)
+add_library(httpstats SHARED src/httpstats.c)
+install(TARGETS httpstats DESTINATION ${CMAKE_SOURCE_DIR}/install)

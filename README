@@ -1,0 +1,213 @@
+SKTTest 
+========
+
+
+This is a simple program to make one or more HTTP GET requests to "http://www.google.com/", 
+read the responses, and extract statistics from the responses. This program is written using 
+C programming. Program consists of a shared library "libhttpstats.so" and an application 
+"application".
+
+httpstats :
+===========
+
+httpstats is a C library that allows the user to extract statistics from HTTP GET requests to "http://www.google.com/".
+
+API's exposed to the user:
+GetHttpStats(): 
+                 int GetHttpStats (int numOfReqs, STATS* stats);
+                 To get statistics for http get requests. Fuction will take two arguments.
+                 numOfReqs => Number of requsts to be made.
+                 stats => Pointer to the structure HttpStats to hold http statistics like IP address of HTTP server,
+                 HTTP response code, median of NAMELOOKUP_TIME, median of CONNECT_TIME, median of STARTTRANSFER_TIME,
+                 and median of TOTAL_TIME. Caller should manage memory for the structure.
+                 Structure and function prototype is defined in "stats_common.h"
+                 Returns STATS_SUCCESS/STATS_FAILURE.
+
+
+SetHeader(): 
+                void SetHeader (char* header);
+                Used to set header values for http request.
+                header : Takes header string as argument.
+                returns nil.
+
+SetVerbose(): 
+                void SetVerbose (bool verboseSetting);
+                Add more verbose for http request.
+                verboseSetting : Takes verbose setting(true/false) as argument.
+                returns nil.
+
+
+application:
+============
+
+application uses "libhttpstats.so" to collect statistics. Details are printed in the format 
+SKTEST;<IP address of HTTP server>;<HTTP response code>;<median of CURLINFO_NAMELOOKUP_TIME>;<median of CURLINFO_CONNECT_TIME>;<median of CURLINFO_STARTTRANSFER_TIME>;<median of CURLINFO_TOTAL_TIME>
+
+
+Arguments used by application:
+-v : To enable verbose.
+--help : To print help menu.
+-H \"Header-name: Header-value\" : Can be used multiple times, each time specifying an extra HTTP header to add to your request.
+-n <integer> : Number of HTTP requests to make (i.e. the number of samples you will have to take the median of); Default is 1.
+
+
+Usage:
+
+1)
+application -n 5
+
+2)
+application -n 5 -H "Name:SamKnows"
+
+3)
+application -v -n 1 -H "Name:SamKnows"
+
+4)
+application -n 10 -H "Name:SamKnows" -H "Process:TechTest"
+
+
+
+Build and Test:
+===============
+
+cmake is used to build application and library. After build, artifacts will be installed in "install" directory.
+
+prerequisites : Need curl and cmake for the build.
+
+steps:
+mkdir build && cd build
+cmake ..
+make
+make install
+
+ctest is used for unit testing.
+
+steps:
+cd build
+ctest
+
+Output:
+~/samknows/build$ ctest
+Test project ~/samknows/build
+      Start  1: TestCase1
+ 1/11 Test  #1: TestCase1 ........................   Passed    0.01 sec
+      Start  2: TestCase2
+ 2/11 Test  #2: TestCase2 ........................   Passed    0.12 sec
+      Start  3: TestCase3
+ 3/11 Test  #3: TestCase3 ........................   Passed    0.11 sec
+      Start  4: TestCase4
+ 4/11 Test  #4: TestCase4 ........................   Passed    0.94 sec
+      Start  5: TestCase5
+ 5/11 Test  #5: TestCase5 ........................   Passed    0.48 sec
+      Start  6: TestCase6
+ 6/11 Test  #6: TestCase6 ........................   Passed    0.50 sec
+      Start  7: TestCase7
+ 7/11 Test  #7: TestCase7 ........................   Passed    0.49 sec
+      Start  8: TestCase8
+ 8/11 Test  #8: TestCase8 ........................   Passed    0.48 sec
+      Start  9: TestCase9
+ 9/11 Test  #9: TestCase9 ........................   Passed    0.12 sec
+      Start 10: TestCase10
+10/11 Test #10: TestCase10 .......................   Passed    0.02 sec
+      Start 11: TestCase11
+11/11 Test #11: TestCase11 .......................   Passed    0.12 sec
+
+100% tests passed, 0 tests failed out of 11
+
+Total Test time (real) =   3.42 sec
+~/samknows/build$
+
+
+Testing:
+========
+
+1) Simple execution with no headers
+~/samknows/install$ ./application -n 5
+
+SKTEST;142.250.180.4;200;0.000063;0.000063;0.091029;0.091071
+
+2) Execution with header
+~/samknows/install$ ./application -n 5 -H "Name:SamKnows"
+
+SKTEST;142.250.180.4;200;0.000048;0.000048;0.090010;0.090058
+
+3) Execution with verbose enabled
+~/samknows/install$ ./application -v -n 1 -H "Name:SamKnows"
+Number of requests to make : 1
+Header : Name:SamKnows
+*   Trying 142.250.180.4...
+* TCP_NODELAY set
+* Connected to www.google.com (142.250.180.4) port 80 (#0)
+> HEAD / HTTP/1.1
+Host: www.google.com
+Accept: */*
+Name:SamKnows
+
+< HTTP/1.1 200 OK
+< Content-Type: text/html; charset=ISO-8859-1
+< P3P: CP="This is not a P3P policy! See g.co/p3phelp for more info."
+< Date: Sun, 27 Feb 2022 17:05:57 GMT
+< Server: gws
+< X-XSS-Protection: 0
+< X-Frame-Options: SAMEORIGIN
+< Transfer-Encoding: chunked
+< Expires: Sun, 27 Feb 2022 17:05:57 GMT
+< Cache-Control: private
+< Set-Cookie: NID=511=rOB5Bs50xBH_nOhfPuko94m3gtBsnMHGKWHtsD8yRkALoGWSKqEO7Pj1RdlxuzkUqZpOImFRT9g4vr5lXNZO09ApbI3tkaH81ClOu8KVJWqj50ACxq3yifMQFOBHPAykGkMjBUluQxZ3rTM8qmCuflcu8PKbAeu_h7-estctf8E; expires=Mon, 29-Aug-2022 17:05:57 GMT; path=/; domain=.google.com; HttpOnly
+<
+* Connection #0 to host www.google.com left intact
+HTTP Statistics :
+Response Code = 200
+IP Address = 142.250.180.4
+Namelookup Time Median = 0.004154
+Connect Time Median = 0.010453
+Start Time Median = 0.101466
+Total Time Median = 0.106558
+
+SKTEST;142.250.180.4;200;0.004154;0.010453;0.101466;0.106558
+~/samknows/install$
+
+4) Execution with multiple headers
+~/samknows/install$ ./application -n 10 -H "Name:SamKnows" -H "Process:TechTest"
+
+SKTEST;142.250.187.196;200;0.000043;0.000044;0.092095;0.092135
+
+5) Execution with no "-n" argument
+~/samknows/install$ ./application -H "Name:SamKnows"
+
+SKTEST;142.250.180.4;200;0.012662;0.023679;0.115448;0.115487
+
+
+Negative Scenarios:
+-------------------
+
+6) Setting number of requests to 0.
+
+~/samknows/install$ ./application -n 0 -H "Name:SamKnows" -H "Process:TechTest"
+Invalid Arguments, Cant set number of requests to 0!
+Help:
+-v : To enable verbose.
+--help : To print help menu.
+-H "Header-name: Header-value" : Can be used multiple times, each time specifying an extra HTTP header to add to your request.
+-n <integer> : Number of HTTP requests to make (i.e. the number of samples you will have to take the median of); Default is 1.
+~/samknows/install$
+
+7) No connectivity.
+
+~/samknows/install$ ping -c 5 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+From 192.168.1.54 icmp_seq=3 Destination Host Unreachable
+From 192.168.1.54 icmp_seq=5 Destination Host Unreachable
+
+--- 8.8.8.8 ping statistics ---
+5 packets transmitted, 0 received, +2 errors, 100% packet loss, time 4064ms
+
+~/samknows/install$ ./application -n 10 -H "Name:SamKnows"
+ERROR! Curl Perform Failed : Couldn't resolve host name
+ERROR! Failed to retrieve http statistics
+~/samknows/install$
+
+
+====================================
+Author : Anoop Ravi
+email : anoopravik@gmail.com
